@@ -47,6 +47,7 @@ def FaceDetectionExtraction(img, face_locations, results_path, filename):
 
 		#Face Co-ordinates
 		y1,x1,y2,x2 = face_locations[i]
+		# print(x1,y1,x2,y2)
 
 		#Save the Extracted Face
 		#Output Face(Careful with coordinates!!)
@@ -122,8 +123,34 @@ def face_detection_main():
 		#Detect Faces
 		img = fr.load_image_file(path)
 
+		height, width, dim = img.shape
+		# print(img.shape)
+		# if height < width:
+
+		# 	#Transposed Image
+		# 	new_image = np.zeros((width, height, dim), dtype=np.uint8)
+
+		# 	# Copy the original image onto the new image with the dimensions swapped
+		# 	cv.transpose(img, new_image)
+		# 	cv.flip(new_image, 1, new_image)
+		# 	img = new_image
+		# 	print(img.shape)
+
+
 		#Give faces co-ordinates as (y1,x1, y2, x2)
-		face_locations = fr.face_locations(img)
+		face_locations = fr.face_locations(img, number_of_times_to_upsample=3)
+
+		#If no face is found in image
+		if len(face_locations) == 0:
+			#Transposed Image
+			new_image = np.zeros((width, height, dim), dtype=np.uint8)
+
+			# Copy the original image onto the new image with the dimensions swapped
+			cv.transpose(img, new_image)
+			cv.flip(new_image, 1, new_image)
+			img = new_image
+			face_locations = fr.face_locations(img, number_of_times_to_upsample=3)
+
 
 		filename = os.path.basename(path).split(".")[0]
 

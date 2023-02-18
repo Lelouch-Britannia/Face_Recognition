@@ -1,6 +1,5 @@
 import argparse 
 import sys
-import importlib
 import os
 from face_detection import face_detection_main
 
