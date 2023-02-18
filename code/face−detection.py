@@ -19,6 +19,21 @@ def CheckFileExists(path):
 		raise SystemError(f"File don't Exists: {path}")
 
 
+def CheckDirExists(path):
+
+	"""
+	Check if the given Directory exists or not 
+	if not make it
+	path : Relative Path of file
+	"""
+	try:
+		if not os.path.exists(path):
+			os.makedirs(path)
+	except OSError:
+		raise SystemError(f"Directory don't Exists: {path}")
+
+
+
 def main():
 
 	#Argument Parsing
@@ -49,27 +64,45 @@ def main():
 
 		#Read the image path from the CLI
 		path = args.path_to_image
+		results_path = args.path_to_save_faces
 
 		CheckFileExists(path)
 
 		#Detect Faces
 		img = fr.load_image_file(path)
 
-		#Give face co-ordinates as (y1,x1, y2, x2)
+		#Give faces co-ordinates as (y1,x1, y2, x2)
 		face_locations = fr.face_locations(img)
 
+		filename = os.path.basename(path).split(".")[0]
 
-		#Extract Faces
+
+		#Bounding Box + Face Extraction
 		mask = np.zeros_like(img, dtype=np.uint8)
-		for face_location in face_locations:
-			#Bounding Box
-			y1,x1,y2,x2 = face_location
-			
+		for i in range(len(face_locations)):
 
-			pt1 = (x1,y1)
-			pt2 = (x2,y2)
-			# print(pt1,pt2)
-			mask = cv.rectangle(mask, pt1, pt2, (255,255,255), 1)
+			#Face Co-ordinates
+			y1,x1,y2,x2 = face_locations[i]
+
+			#Save the Extracted Face
+			#Output Face(Careful with coordinates!!)
+			face = img[y1:y2, x2:x1, :]
+			face = face[:,:,[2,1,0]]
+			
+			
+			#Check the number of Faces
+			if len(face_locations) > 1:
+				suffix = f"face{filename}suffix0{i+1}"
+			else:
+				suffix = f"{filename}"
+
+			#Check if the Dir exists
+			CheckDirExists(results_path)
+			#Save the results
+			output_img_loc = os.path.join(results_path, f"{suffix}.jpg")
+			cv.imwrite(output_img_loc, face)
+
+			mask = cv.rectangle(mask, (x1,y1), (x2,y2), (255,255,255), 1)
 
 		#Output image
 		out = np.zeros_like(img, dtype=np.uint8)
@@ -93,11 +126,14 @@ def main():
 		cv.waitKey()
 		cv.destroyAllWindows()
 
+
+
+
 	else:
 		pass
 
 
-	#Save the Extracted Face
+	
 
 
 
