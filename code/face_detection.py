@@ -36,15 +36,15 @@ def FaceDetectionExtraction(img, face_locations, scaling, results_path=None, fil
     bounding boxes drawn around the faces.
     
     Parameters:
-    img (numpy.ndarray)			: The image to be analyzed.
-    face_locations (list)		: The location of the faces in the image.
-    scaling (float)				: The scaling factor used for face detection.
+    img (numpy.ndarray)	: The image to be analyzed.
+    face_locations (list): The location of the faces in the image.
+    scaling (float)	: The scaling factor used for face detection.
     results_path (str, optional): The path to the directory where extracted faces and/or the output image should be saved.
     filename (str, optional)	: The name of the output file to be saved. If multiple faces are detected, a suffix with the face index will be appended to the filename.
     extraction (bool, optional)	: Whether or not to extract and save the faces.
     
     Returns:
-    numpy.ndarray 				: The output image with bounding boxes drawn around the faces.
+    numpy.ndarray : The output image with bounding boxes drawn around the faces.
     """
 
     # Create a black mask with the same dimensions as the input image.
