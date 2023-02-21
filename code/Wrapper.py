@@ -23,7 +23,6 @@ def Wrapper_main():
 	args = parser.parse_args()
 
 	files_list = os.listdir(args.directory_of_images)
-	print(files_list)
 
 	#Other Arguments
 	data = "--data"

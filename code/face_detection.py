@@ -32,7 +32,7 @@ def CheckDirExists(path):
 	except OSError:
 		raise SystemError(f"Directory don't Exists: {path}")
 
-def FaceDetectionExtraction(img, face_locations, results_path, filename):
+def FaceDetectionExtraction(img, face_locations, scaling, results_path=None, filename=None, extraction=False):
 	"""
 	For Bounding box around all the faces in the given image
 	and extraction all the faces and saving
@@ -47,25 +47,31 @@ def FaceDetectionExtraction(img, face_locations, results_path, filename):
 
 		#Face Co-ordinates
 		y1,x1,y2,x2 = face_locations[i]
-		# print(x1,y1,x2,y2)
 
-		#Save the Extracted Face
-		#Output Face(Careful with coordinates!!)
-		face = img[y1:y2, x2:x1, :]
-		face = face[:,:,[2,1,0]]
-		
-		
-		#Check the number of Faces
-		if len(face_locations) > 1:
-			suffix = f"face{filename}suffix0{i+1}"
-		else:
-			suffix = f"{filename}"
+		#Scale back up face locations since the faces were detected in frame which was scaled 
+		y1 = int(y1*(scaling**-1))
+		x1 = int(x1*(scaling**-1))
+		y2 = int(y2*(scaling**-1))
+		x2 = int(x2*(scaling**-1))
 
-		#Check if the Dir exists
-		CheckDirExists(results_path)
-		#Save the results
-		output_img_loc = os.path.join(results_path, f"{suffix}.jpg")
-		cv.imwrite(output_img_loc, face)
+		if extraction:
+			#Save the Extracted Face
+			#Output Face(Careful with coordinates!!)
+			face = img[y1:y2, x2:x1, :]
+			face = face[:,:,[2,1,0]]
+			
+			
+			#Check the number of Faces
+			if len(face_locations) > 1:
+				suffix = f"face{filename}suffix0{i+1}"
+			else:
+				suffix = f"{filename}"
+
+			#Check if the Dir exists
+			CheckDirExists(results_path)
+			#Save the results
+			output_img_loc = os.path.join(results_path, f"{suffix}.jpg")
+			cv.imwrite(output_img_loc, face)
 
 		mask = cv.rectangle(mask, (x1,y1), (x2,y2), (255,255,255), 1)
 
@@ -76,7 +82,7 @@ def FaceDetectionExtraction(img, face_locations, results_path, filename):
 	dim = 3
 	for j in range(dim):
 		#To make a red box(0,0,255)
-		if j == 0:
+		if j == 2:
 			out[:,:,j] = np.where(mask[:,:,j] == out[:,:,j], img[:,:,j], 255)
 		else:
 			out[:,:,j] = np.where(mask[:,:,j] == out[:,:,j], img[:,:,j], 0)
@@ -125,8 +131,11 @@ def face_detection_main():
 
 		height, width, dim = img.shape
 
+		#Resize the frame of video to 1/4 for faster face detection 
+		small_img = cv.resize(img, (0,0), fx=0.5, fy=0.5)
+
 		#Get all the faces co-ordinates as (y1,x1, y2, x2)
-		face_locations = fr.face_locations(img, number_of_times_to_upsample=3)
+		face_locations = fr.face_locations(small_img)
 
 		#If no face is found in image
 		if len(face_locations) == 0:
@@ -137,17 +146,21 @@ def face_detection_main():
 			cv.transpose(img, new_image)
 			cv.flip(new_image, 1, new_image)
 			img = new_image
-			face_locations = fr.face_locations(img, number_of_times_to_upsample=3)
+
+			#Resize the frame of video to 1/4 for faster face detection 
+			small_img = cv.resize(img, (0,0), fx=0.5, fy=0.5)
+
+			face_locations = fr.face_locations(small_img)
 
 
 		filename = os.path.basename(path).split(".")[0]
+		#Change color mapping
+		img = img[:,:,::-1]
 
-		out = FaceDetectionExtraction(img, face_locations, results_path,filename)
+		out = FaceDetectionExtraction(img, face_locations, 0.5, results_path, filename)
 		
 		window_name = os.path.basename(path).split(".")[0]
 
-		#Change color mapping
-		out = out[:,:,[2,1,0]]
 		cv.imshow(window_name,out)
 		cv.waitKey()
 		cv.destroyAllWindows()
@@ -162,12 +175,9 @@ def face_detection_main():
 		video = cv.VideoCapture(video_path)
 
 		#Grab a single frame from the video
-		video.set(cv.CAP_PROP_POS_MSEC,1)
+		# video.set(cv.CAP_PROP_POS_MSEC,1)
 		ret, frame = video.read()
-		# if ret == False:
-		# 	raise SystemError("No Frame can be generated from the Video")
-		# # cv.imshow("Frame", frame)
-
+		
 		#Path to save results
 		if os.path.basename(video_path) == "arnold.mp4":
 			result_path = os.path.join(args.path_to_save_result, os.path.basename(video_path))
@@ -175,7 +185,6 @@ def face_detection_main():
 			file_name = os.path.basename(video_path).split(".")[0]
 			result_path = os.path.join(args.path_to_save_result, f"{file_name}Output?.mp4")
 
-		# print(result_path)
 		output = cv.VideoWriter(result_path, cv.VideoWriter_fourcc(*"mp4v"), 30, (frame.shape[1], frame.shape[0]))
 
 		process_frame = True
@@ -185,7 +194,6 @@ def face_detection_main():
 
 			#Only process every other frame from the video to save time
 			if process_frame:
-				cv.imshow("Frame", frame)
 
 				#Resize the frame of video to 1/4 for faster face detection 
 				small_frame = cv.resize(frame, (0,0), fx=0.25, fy=0.25)
@@ -199,29 +207,9 @@ def face_detection_main():
 
 			process_frame = not process_frame
 
-			#Draw the bounding box(General Method)
-			mask = np.zeros_like(frame, dtype=np.uint8)
-			for y1,x1,y2,x2 in face_locations:
+			out = FaceDetectionExtraction(frame, face_locations, 0.25)
 
-				#Scale back up face locations since the faces were detected in frame which was scaled by 1/4
-				y1 *= 4
-				x1 *= 4
-				y2 *= 4
-				x2 *= 4
-
-				mask = cv.rectangle(mask, (x1,y1), (x2,y2), (255,255,255), 2)
-
-			#Output image
-			out = np.zeros_like(frame, dtype=np.uint8)
-
-			#To do matching in all 3 channels
-			dim = 3
-			for j in range(dim):
-				#To make a red box(0,0,255)
-				if j == 2:
-					out[:,:,j] = np.where(mask[:,:,j] == out[:,:,j], frame[:,:,j], 255)
-				else:
-					out[:,:,j] = np.where(mask[:,:,j] == out[:,:,j], frame[:,:,j], 0)
+			# out = out[:,:,::-1]
 
 			#Save the result 
 			output.write(out)
@@ -236,11 +224,6 @@ def face_detection_main():
 
 	else:
 		pass
-
-
-	
-
-
 
 if __name__ == "__main__":
 
