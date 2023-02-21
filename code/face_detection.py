@@ -7,88 +7,99 @@ import argparse
 
 
 def CheckFileExists(path):
-
-	"""
-	Check if the given file exists or not
-	path : Relative Path of file
-	"""
-
-	try:
-		os.path.exists(path)
-	except OSError:
-		raise SystemError(f"File don't Exists: {path}")
-
+    """
+    Check if the given file exists or not
+    path : Relative Path of file
+    """
+    # Check if the file exists at the given path, and raise an error if it doesn't
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"File not found at path: {path}")
 
 def CheckDirExists(path):
+    """
+    Check if the given Directory exists or not 
+    if not make it
+    path : Relative Path of file
+    """
+    # Check if the directory exists at the given path, and create it if it doesn't
+    if not os.path.exists(path):
+        os.makedirs(path)
 
-	"""
-	Check if the given Directory exists or not 
-	if not make it
-	path : Relative Path of file
-	"""
-	try:
-		if not os.path.exists(path):
-			os.makedirs(path)
-	except OSError:
-		raise SystemError(f"Directory don't Exists: {path}")
+import os
+import cv2 as cv
+import numpy as np
+
 
 def FaceDetectionExtraction(img, face_locations, scaling, results_path=None, filename=None, extraction=False):
-	"""
-	For Bounding box around all the faces in the given image
-	and extraction all the faces and saving
-	img 			: Image to be analysed
-	face_locations 	: Location of faces in the image
-	filename 		: For saving the faces
-	"""
+    """
+    Extracts faces from an image and optionally saves the extracted faces and/or a copy of the image with
+    bounding boxes drawn around the faces.
+    
+    Parameters:
+    img (numpy.ndarray)			: The image to be analyzed.
+    face_locations (list)		: The location of the faces in the image.
+    scaling (float)				: The scaling factor used for face detection.
+    results_path (str, optional): The path to the directory where extracted faces and/or the output image should be saved.
+    filename (str, optional)	: The name of the output file to be saved. If multiple faces are detected, a suffix with the face index will be appended to the filename.
+    extraction (bool, optional)	: Whether or not to extract and save the faces.
+    
+    Returns:
+    numpy.ndarray 				: The output image with bounding boxes drawn around the faces.
+    """
 
-	#Creating mask 
-	mask = np.zeros_like(img, dtype=np.uint8)
-	for i in range(len(face_locations)):
+    # Create a black mask with the same dimensions as the input image.
+    mask = np.zeros_like(img, dtype=np.uint8)
 
-		#Face Co-ordinates
-		y1,x1,y2,x2 = face_locations[i]
+    # Loop over each detected face.
+    for i, face_location in enumerate(face_locations):
 
-		#Scale back up face locations since the faces were detected in frame which was scaled 
-		y1 = int(y1*(scaling**-1))
-		x1 = int(x1*(scaling**-1))
-		y2 = int(y2*(scaling**-1))
-		x2 = int(x2*(scaling**-1))
+        # Extract the coordinates of the face bounding box.
+        y1, x1, y2, x2 = face_location
 
-		if extraction:
-			#Save the Extracted Face
-			#Output Face(Careful with coordinates!!)
-			face = img[y1:y2, x2:x1, :]
-			face = face[:,:,[2,1,0]]
-			
-			
-			#Check the number of Faces
-			if len(face_locations) > 1:
-				suffix = f"face{filename}suffix0{i+1}"
-			else:
-				suffix = f"{filename}"
+        # Scale the face bounding box back up to the original image size.
+        y1 = int(y1 * (scaling ** -1))
+        x1 = int(x1 * (scaling ** -1))
+        y2 = int(y2 * (scaling ** -1))
+        x2 = int(x2 * (scaling ** -1))
 
-			#Check if the Dir exists
-			CheckDirExists(results_path)
-			#Save the results
-			output_img_loc = os.path.join(results_path, f"{suffix}.jpg")
-			cv.imwrite(output_img_loc, face)
+        # If requested, extract and save the face.
+        if extraction:
 
-		mask = cv.rectangle(mask, (x1,y1), (x2,y2), (255,255,255), 1)
+            # Extract the face from the original image.
+            face = img[y1:y2, x1:x2, :]
+            face = face[:, :, [2, 1, 0]]  # Reorder color channels from BGR to RGB.
 
-	#Output image
-	out = np.zeros_like(img, dtype=np.uint8)
+            # Determine the suffix for the output filename, based on the number of detected faces.
+            if len(face_locations) > 1:
+                suffix = f"face{filename}suffix0{i+1}"
+            else:
+                suffix = f"{filename}"
 
-	#To do matching in all 3 channels
-	dim = 3
-	for j in range(dim):
-		#To make a red box(0,0,255)
-		if j == 2:
-			out[:,:,j] = np.where(mask[:,:,j] == out[:,:,j], img[:,:,j], 255)
-		else:
-			out[:,:,j] = np.where(mask[:,:,j] == out[:,:,j], img[:,:,j], 0)
+            # Ensure that the output directory exists.
+            CheckDirExists(results_path)
+
+            # Save the extracted face.
+            output_img_loc = os.path.join(results_path, f"{suffix}.jpg")
+            cv.imwrite(output_img_loc, face)
+
+        # Draw a white bounding box around the face on the mask.
+        mask = cv.rectangle(mask, (x1, y1), (x2, y2), (255, 255, 255), 1)
+
+    # Create an output image with the same dimensions as the input image.
+    out = np.zeros_like(img, dtype=np.uint8)
+
+    # Iterate over each color channel in the output image.
+    for j in range(3):
+
+        # Set the output image pixels to red (0, 0, 255) where the corresponding pixel in the mask is white.
+        if j == 2:
+            out[:, :, j] = np.where(mask[:, :, j] == 255, 255, img[:, :, j])
+        else:
+            out[:, :, j] = np.where(mask[:, :, j] == 255, 0, img[:, :, j])
+
+    return out
 
 
-	return out
 
 
 
