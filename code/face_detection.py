@@ -97,14 +97,14 @@ def face_detection_main():
 		fromfile_prefix_chars="@")
 
 	#Arguments
-	parser.add_argument("path_to_image")
-	parser.add_argument("path_to_save_faces")
+	parser.add_argument("path_to_data")
+	parser.add_argument("path_to_save_result")
 	parser.add_argument("value")
 
 
 	#Flags
-	parser.add_argument("-d", "--data", action="store_true", required=True, help="Path to Image")
-	parser.add_argument("-f", "--faces", action="store_true", required=True, help="Path to save Faces")
+	parser.add_argument("-d", "--data", action="store_true", required=True, help="Path to Data")
+	parser.add_argument("-f", "--faces", action="store_true", required=True, help="Path to save results")
 	parser.add_argument("-t", "--type", action="store_true", required=True, help="File application")
 
 	args = parser.parse_args()
@@ -115,8 +115,8 @@ def face_detection_main():
 	if para == "1" :
 
 		#Read the image path from the CLI
-		path = args.path_to_image
-		results_path = args.path_to_save_faces
+		path = args.path_to_data
+		results_path = args.path_to_save_result
 
 		CheckFileExists(path)
 
@@ -124,20 +124,8 @@ def face_detection_main():
 		img = fr.load_image_file(path)
 
 		height, width, dim = img.shape
-		# print(img.shape)
-		# if height < width:
 
-		# 	#Transposed Image
-		# 	new_image = np.zeros((width, height, dim), dtype=np.uint8)
-
-		# 	# Copy the original image onto the new image with the dimensions swapped
-		# 	cv.transpose(img, new_image)
-		# 	cv.flip(new_image, 1, new_image)
-		# 	img = new_image
-		# 	print(img.shape)
-
-
-		#Give faces co-ordinates as (y1,x1, y2, x2)
+		#Get all the faces co-ordinates as (y1,x1, y2, x2)
 		face_locations = fr.face_locations(img, number_of_times_to_upsample=3)
 
 		#If no face is found in image
@@ -164,6 +152,88 @@ def face_detection_main():
 		cv.waitKey()
 		cv.destroyAllWindows()
 
+	elif para == "2":
+
+		#Read the video from CLI
+		video_path = args.path_to_data
+
+		CheckFileExists(video_path)
+
+		video = cv.VideoCapture(video_path)
+
+		#Grab a single frame from the video
+		video.set(cv.CAP_PROP_POS_MSEC,1)
+		ret, frame = video.read()
+		# if ret == False:
+		# 	raise SystemError("No Frame can be generated from the Video")
+		# # cv.imshow("Frame", frame)
+
+		#Path to save results
+		if os.path.basename(video_path) == "arnold.mp4":
+			result_path = os.path.join(args.path_to_save_result, os.path.basename(video_path))
+		else:
+			file_name = os.path.basename(video_path).split(".")[0]
+			result_path = os.path.join(args.path_to_save_result, f"{file_name}Output?.mp4")
+
+		# print(result_path)
+		output = cv.VideoWriter(result_path, cv.VideoWriter_fourcc(*"mp4v"), 30, (frame.shape[1], frame.shape[0]))
+
+		process_frame = True
+		#Read the Video Frame by Frame
+		while True:
+
+
+			#Only process every other frame from the video to save time
+			if process_frame:
+				cv.imshow("Frame", frame)
+
+				#Resize the frame of video to 1/4 for faster face detection 
+				small_frame = cv.resize(frame, (0,0), fx=0.25, fy=0.25)
+
+				#convert image from BGR (which opencv uses) to RGB (which face_recognition uses)
+				small_frame = small_frame[:,:, ::-1]
+
+
+				#Get all the faces co-ordinates as (y1,x1, y2, x2)
+				face_locations = fr.face_locations(small_frame)
+
+			process_frame = not process_frame
+
+			#Draw the bounding box(General Method)
+			mask = np.zeros_like(frame, dtype=np.uint8)
+			for y1,x1,y2,x2 in face_locations:
+
+				#Scale back up face locations since the faces were detected in frame which was scaled by 1/4
+				y1 *= 4
+				x1 *= 4
+				y2 *= 4
+				x2 *= 4
+
+				mask = cv.rectangle(mask, (x1,y1), (x2,y2), (255,255,255), 2)
+
+			#Output image
+			out = np.zeros_like(frame, dtype=np.uint8)
+
+			#To do matching in all 3 channels
+			dim = 3
+			for j in range(dim):
+				#To make a red box(0,0,255)
+				if j == 2:
+					out[:,:,j] = np.where(mask[:,:,j] == out[:,:,j], frame[:,:,j], 255)
+				else:
+					out[:,:,j] = np.where(mask[:,:,j] == out[:,:,j], frame[:,:,j], 0)
+
+			#Save the result 
+			output.write(out)
+			ret, frame = video.read()
+			if ret == False:
+				break
+			# cv.waitKey()
+
+		video.release()
+		output.release()
+		cv.destroyAllWindows()
+
 	else:
 		pass
 
@@ -173,4 +243,6 @@ def face_detection_main():
 
 
 if __name__ == "__main__":
+
+	
 	face_detection_main()

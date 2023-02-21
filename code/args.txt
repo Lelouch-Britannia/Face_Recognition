@@ -1,6 +1,6 @@
 --data
-/Users/ltc/Documents/Python Scripts/CS763/22M1079_22M1177_22M2119_Task02/data/captured/02.jpg
+/Users/ltc/Desktop/arnold.mp4
 --faces
 /Users/ltc/Documents/Python Scripts/CS763/22M1079_22M1177_22M2119_Task02/results/faceDetection
 --type
-1
+2
