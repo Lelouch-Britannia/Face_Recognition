@@ -1,0 +1,2 @@
+--data
+/Users/ltc/Documents/Python Scripts/CS763/22M1079_22M1177_22M2119_Task02/data/captured/06.jpg

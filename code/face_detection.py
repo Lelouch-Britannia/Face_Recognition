@@ -2,7 +2,7 @@ import face_recognition as fr
 import os
 import numpy as np
 import cv2 as cv
-import argparse 
+import argparse
 
 
 
@@ -66,8 +66,8 @@ def FaceDetectionExtraction(img, face_locations, scaling, results_path=None, fil
         if extraction:
 
             # Extract the face from the original image.
-            face = img[y1:y2, x1:x2, :]
-            face = face[:, :, [2, 1, 0]]  # Reorder color channels from BGR to RGB.
+            face = img[y1:y2, x2:x1, :]
+            # face = face[:, :, [2, 1, 0]]  # Reorder color channels from BGR to RGB.
 
             # Determine the suffix for the output filename, based on the number of detected faces.
             if len(face_locations) > 1:
@@ -168,7 +168,7 @@ def face_detection_main():
 		#Change color mapping
 		img = img[:,:,::-1]
 
-		out = FaceDetectionExtraction(img, face_locations, 0.5, results_path, filename)
+		out = FaceDetectionExtraction(img, face_locations, 0.5, results_path, filename, True)
 		
 		window_name = os.path.basename(path).split(".")[0]
 
