@@ -181,11 +181,10 @@ def main():
 	#Sort faces L to R to (top,right, bottom, left)
 	faces_cords = sorted(faces_cords, key=lambda x : x[3])
 
-	#Get the bounding box information for VJ
+	"""Get the bounding box information for VJ"""
 
 	#Converting to gray scale
 	gray_img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-	#Get the VJ Faces
 	
 	#Getting the Haar Cascade from xml file
 	haarcascade = cv.CascadeClassifier(cv.data.haarcascades + 'haarcascade_frontalface_default.xml')
@@ -198,9 +197,7 @@ def main():
 	#Sort L to R
 	vj_faces_cords = sorted(vj_faces_cords, key=lambda x : x[3])
 
-	#Get the bounding box information for HOG
-
-	#Get the HOG Faces
+	"""Get the bounding box information for HOG"""
 
 	#Detect Faces
 
