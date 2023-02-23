@@ -46,11 +46,13 @@ def FaceDetectionExtraction(img, face_locations, scaling, results_path=None, fil
     # Create a black mask with the same dimensions as the input image.
     mask = np.zeros_like(img, dtype=np.uint8)
 
+    print(f"Filename : {filename}\n")
     # Loop over each detected face.
     for i, face_location in enumerate(face_locations):
 
         # Extract the coordinates of the face bounding box.
         y1, x1, y2, x2 = face_location
+
         print(f"Top, right, bottom, left:({y1}, {x1}, {y2}, {x2})")
 
         # Scale the face bounding box back up to the original image size.
