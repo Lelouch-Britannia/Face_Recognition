@@ -133,93 +133,101 @@ def GetFaces(img, faces):
 def main():
 
 
-	#Parsing
-	parser = argparse.ArgumentParser(prog="compare.py",
-		description="Compare Vj and HOG via Intersection over Union",
-		epilog="Thank you for using!!",
-		argument_default=argparse.SUPPRESS,
-		allow_abbrev=False,
-		fromfile_prefix_chars="@")
+    #Parsing
+    parser = argparse.ArgumentParser(prog="compare.py",
+    description="Compare Vj and HOG via Intersection over Union",
+    epilog="Thank you for using!!",
+    argument_default=argparse.SUPPRESS,
+    allow_abbrev=False,
+    fromfile_prefix_chars="@")
 
 
-	#Arguments
-	parser.add_argument("path_to_image")
+    #Arguments
+    parser.add_argument("path_to_image")
 
-	#Flags
-	parser.add_argument("-d","--data",action="store_true", required=True, help="Path to Image")
-
-
-	args = parser.parse_args()
+    #Flags
+    parser.add_argument("-d","--data",action="store_true", required=True, help="Path to Image")
 
 
-	CheckFileExists(args.path_to_image)
+    args = parser.parse_args()
 
 
-	img = fr.load_image_file(args.path_to_image)
-	img = img[:,:, ::-1]
-	height, width, dim = img.shape
+    CheckFileExists(args.path_to_image)
 
-	#Get the Ground truth from the pickle file
 
-	#Get the corresponding pickle
-	file_name = os.path.basename(args.path_to_image).split(".")[0]
-	dirname = os.path.dirname(args.path_to_image)
-	pickle_file = os.path.join(dirname, f"{file_name}.txt")
+    img = fr.load_image_file(args.path_to_image)
+    img = img[:,:, ::-1]
+    height, width, dim = img.shape
 
-	#Unpickle to get the bounding box information
-	with open(pickle_file, "rb") as f:
-		content = f.read(1000)
-		faces_cords = pickle.loads(content)
+    #Get the Ground truth from the pickle file
 
-	
-	#Changing Format
-	faces_cords = faces_cords[1]
-	faces_cords = ChangeFormat(faces_cords)
+    #Get the corresponding pickle
+    file_name = os.path.basename(args.path_to_image).split(".")[0]
+    dirname = os.path.dirname(args.path_to_image)
+    pickle_file = os.path.join(dirname, f"{file_name}.txt")
 
-	#Get the ground truth Co-ordinates 
+    #Unpickle to get the bounding box information
+    with open(pickle_file, "rb") as f:
+        content = f.read(1000)
+        faces_cords = pickle.loads(content)
 
-	#Sort faces L to R to (top,right, bottom, left)
-	faces_cords = sorted(faces_cords, key=lambda x : x[3])
 
-	"""Get the bounding box information for VJ"""
+    #Changing Format
+    faces_cords = faces_cords[1]
+    faces_cords = ChangeFormat(faces_cords)
 
-	#Converting to gray scale
-	gray_img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-	
-	#Getting the Haar Cascade from xml file
-	haarcascade = cv.CascadeClassifier(cv.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    #Get the ground truth Co-ordinates 
 
-	vj_faces_cords = haarcascade.detectMultiScale(gray_img, 1.4, 9)
+    #Sort faces L to R to (top,right, bottom, left)
+    faces_cords = sorted(faces_cords, key=lambda x : x[3])
 
-	#Changing Format to (top,right, bottom, left)
-	vj_faces_cords = ChangeFormat(vj_faces_cords)
+    """Get the bounding box information for VJ"""
 
-	#Sort L to R
-	vj_faces_cords = sorted(vj_faces_cords, key=lambda x : x[3])
+    #Converting to gray scale
+    gray_img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
-	"""Get the bounding box information for HOG"""
+    #Getting the Haar Cascade from xml file
+    haarcascade = cv.CascadeClassifier(cv.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
-	#Detect Faces
+    vj_faces_cords = haarcascade.detectMultiScale(gray_img, 1.4, 9)
 
-	#Get all the faces co-ordinates as (top,right, bottom, left))
-	face_locations = fr.face_locations(img)
+    #Changing Format to (top,right, bottom, left)
+    vj_faces_cords = ChangeFormat(vj_faces_cords)
 
-	#Sort faces from L to R
-	face_locations = sorted(face_locations, key=lambda x : x[3])
+    #Sort L to R
+    vj_faces_cords = sorted(vj_faces_cords, key=lambda x : x[3])
 
-	iou1 = 0
-	iou2 = 0
-	no_of_faces = len(faces_cords)
-	#Calculate Intersection over Union
-	for i in range(no_of_faces):
-		iou1 += CalculateIou(faces_cords[i], face_locations[i])
-		iou2 += CalculateIou(faces_cords[i], vj_faces_cords[i])
+    """Get the bounding box information for HOG"""
 
-	#Taking the avg of all the iou scores 
-	avg_iou1 = iou1/no_of_faces
-	avg_iou2 = iou2/no_of_faces
-	print(f"IoU Score VJ  : {avg_iou2:.2f}")
-	print(f"IoU Score HOG : {avg_iou1:.2f}")
+    #Detect Faces
+
+    #Get all the faces co-ordinates as (top,right, bottom, left))
+    face_locations = fr.face_locations(img)
+
+    #Sort faces from L to R
+    face_locations = sorted(face_locations, key=lambda x : x[3])
+
+    if len(faces_cords) == len(face_locations) & len(faces_cords) == len(vj_faces_cords):
+
+        iou1 = 0
+        iou2 = 0
+        no_of_faces = len(faces_cords)
+
+
+        #Calculate Intersection over Union
+        for i in range(no_of_faces):
+
+            iou1 += CalculateIou(faces_cords[i], face_locations[i])
+            iou2 += CalculateIou(faces_cords[i], vj_faces_cords[i])
+
+        #Taking the avg of all the iou scores 
+        avg_iou1 = iou1/no_of_faces
+        avg_iou2 = iou2/no_of_faces
+        print(f"IoU Score VJ  : {avg_iou2:.2f}")
+        print(f"IoU Score HOG : {avg_iou1:.2f}")
+
+    else:
+        print("Not all the faces detected")
 
 
 
