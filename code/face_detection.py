@@ -25,10 +25,6 @@ def CheckDirExists(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
-import os
-import cv2 as cv
-import numpy as np
-
 
 def FaceDetectionExtraction(img, face_locations, scaling, results_path=None, filename=None, extraction=False):
     """
@@ -144,7 +140,7 @@ def face_detection_main():
 		height, width, dim = img.shape
 
 		#Resize the frame of video to 1/4 for faster face detection 
-		small_img = cv.resize(img, (0,0), fx=1.0, fy=1.0)
+		small_img = cv.resize(img, (0,0), fx=3.0, fy=3.0)
 
 		#Get all the faces co-ordinates as (y1,x1, y2, x2)
 		face_locations = fr.face_locations(small_img)
@@ -169,7 +165,7 @@ def face_detection_main():
 		#Change color mapping
 		img = img[:,:,::-1]
 
-		out = FaceDetectionExtraction(img, face_locations, 1.0, results_path, filename, True)
+		out = FaceDetectionExtraction(img, face_locations, 3.0, results_path, filename, True)
 		
 		window_name = os.path.basename(path).split(".")[0]
 
