@@ -55,6 +55,7 @@ def FaceDetectionExtraction(img, face_locations, scaling, results_path=None, fil
 
         # Extract the coordinates of the face bounding box.
         y1, x1, y2, x2 = face_location
+        print(f"Top, right, bottom, left:({y1}, {x1}, {y2}, {x2})")
 
         # Scale the face bounding box back up to the original image size.
         y1 = int(y1 * (scaling ** -1))
