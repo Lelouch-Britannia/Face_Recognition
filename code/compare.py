@@ -201,9 +201,6 @@ def main():
 
 	#Detect Faces
 
-	#Resize the frame of video to 1/4 for faster face detection 
-	# small_img = cv.resize(img, (0,0), fx=0.5, fy=0.5)
-
 	#Get all the faces co-ordinates as (top,right, bottom, left))
 	face_locations = fr.face_locations(img)
 

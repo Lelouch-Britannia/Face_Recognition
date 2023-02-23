@@ -143,7 +143,7 @@ def face_detection_main():
 		height, width, dim = img.shape
 
 		#Resize the frame of video to 1/4 for faster face detection 
-		small_img = cv.resize(img, (0,0), fx=0.5, fy=0.5)
+		small_img = cv.resize(img, (0,0), fx=1.0, fy=1.0)
 
 		#Get all the faces co-ordinates as (y1,x1, y2, x2)
 		face_locations = fr.face_locations(small_img)
@@ -159,7 +159,7 @@ def face_detection_main():
 			img = new_image
 
 			#Resize the frame of video to 1/4 for faster face detection 
-			small_img = cv.resize(img, (0,0), fx=0.5, fy=0.5)
+			small_img = cv.resize(img, (0,0), fx=1.0, fy=1.0)
 
 			face_locations = fr.face_locations(small_img)
 
@@ -168,7 +168,7 @@ def face_detection_main():
 		#Change color mapping
 		img = img[:,:,::-1]
 
-		out = FaceDetectionExtraction(img, face_locations, 0.5, results_path, filename, True)
+		out = FaceDetectionExtraction(img, face_locations, 1.0, results_path, filename, True)
 		
 		window_name = os.path.basename(path).split(".")[0]
 
@@ -207,7 +207,7 @@ def face_detection_main():
 			if process_frame:
 
 				#Resize the frame of video to 1/4 for faster face detection 
-				small_frame = cv.resize(frame, (0,0), fx=0.25, fy=0.25)
+				small_frame = cv.resize(frame, (0,0), fx=1.0, fy=1.0)
 
 				#convert image from BGR (which opencv uses) to RGB (which face_recognition uses)
 				small_frame = small_frame[:,:, ::-1]
@@ -218,7 +218,7 @@ def face_detection_main():
 
 			process_frame = not process_frame
 
-			out = FaceDetectionExtraction(frame, face_locations, 0.25)
+			out = FaceDetectionExtraction(frame, face_locations, 1.0)
 
 			# out = out[:,:,::-1]
 
